@@ -15,7 +15,14 @@ the given graph:
 6 to 8, weight 9
 7 to 8, weight 2
 */
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <map>
+#include <algorithm>
+#include <functional>
+#include <climits>
 using namespace std;
 
 struct Edge {
@@ -139,7 +146,64 @@ int main() {
 
     cout << "Max Flow from " << source << " to " << sink
          << " = " << maxFlow << "\n";
-}
 /*
 3. For bipartite graph, find out the maximal matching of that bipartite graph.
 */
+    unordered_map<int, vector<int>> bp = {
+        {1,{3,5}},
+        {2,{3,5,8}},
+        {4,{6}},
+        {7,{9}}
+    };
+
+    unordered_set<int> leftSet, rightSet;
+    for (auto &p : bp) {
+        leftSet.insert(p.first);
+        for (int v : p.second) rightSet.insert(v);
+    }
+
+    unordered_map<int,int> rightID;
+    vector<int> idToRight;
+    int rid = 0;
+    for (int v : rightSet) {
+        rightID[v] = ++rid;
+        idToRight.push_back(v);
+    }
+
+    int maxLeft = 0;
+    for (int u : leftSet) maxLeft = max(maxLeft, u);
+
+    vector<vector<int>> G(maxLeft + 1);
+    for (auto &p : bp)
+        for (int v : p.second)
+            G[p.first].push_back(rightID[v]);
+
+    vector<int> matchR(rid + 1, -1);
+    vector<bool> seen;
+
+    function<bool(int)> dfsMatch = [&](int u) {
+        for (int v : G[u]) {
+            if (seen[v]) continue;
+            seen[v] = true;
+            if (matchR[v] == -1 || dfsMatch(matchR[v])) {
+                matchR[v] = u;
+                return true;
+            }
+        }
+        return false;
+    };
+
+    int matching = 0;
+    for (int u : leftSet) {
+        seen.assign(rid + 1, false);
+        if (dfsMatch(u)) matching++;
+    }
+
+    cout << "\nMaximum Matching Size = " << matching << "\n";
+    cout << "Matching pairs:\n";
+    for (int i = 1; i <= rid; i++)
+        if (matchR[i] != -1)
+            cout << matchR[i] << " - " << idToRight[i-1] << "\n";
+}
+
+
